@@ -1,2 +1,1 @@
-# K8sDefinitiveGuide-V6-B-Sourcecode
-《Kubernetes - The Definitive Guide》 6th Edition Part B Source Code
+# 《Kubernetes权威指南》第6版 下册 书中示例代码
