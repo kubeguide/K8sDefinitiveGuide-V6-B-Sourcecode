@@ -1,0 +1,49 @@
+# security-context-demo-2.yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: security-context-demo-2
+spec:
+  securityContext:
+    runAsUser: 1000
+  containers:
+  - name: sec-ctx-demo-2
+    image: gcr.io/google-samples/node-hello:1.0
+    securityContext:
+      runAsUser: 2000
+
+
+
+
+
+# Pod Security Standards
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-baseline-namespace
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: v1.29
+
+
+---
+apiVersion: apiserver.config.k8s.io/v1
+kind: AdmissionConfiguration
+plugins:
+- name: PodSecurity
+  configuration:
+    apiVersion: pod-security.admission.config.k8s.io/v1
+    kind: PodSecurityConfiguration
+    defaults:
+      enforce: "privileged"
+      enforce-version: "latest"
+      audit: "privileged"
+      audit-version: "latest"
+      warn: "privileged"
+      warn-version: "latest"
+    exemptions:
+      usernames: []
+      runtimeClasses: []
+      namespaces: []

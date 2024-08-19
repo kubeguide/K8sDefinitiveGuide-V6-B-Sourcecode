@@ -1,0 +1,66 @@
+# in-tree persistent volume
+
+# hostPath
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod
+spec:
+  containers:
+  - image: busybox
+    name: test-container
+    volumeMounts:
+    - mountPath: /host-data
+      name: test-volume
+  volumes:
+  - name: test-volume
+    hostPath:
+      path: /data           # 宿主机目录
+      type: Directory       # 可选，“Directory”表示该目录必须存在
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-webserver
+spec:
+  containers:
+  - name: test-webserver
+    image: k8s.gcr.io/test-webserver:latest
+    volumeMounts:
+    - mountPath: /var/local/aaa
+      name: mydir
+    - mountPath: /var/local/aaa/1.txt
+      name: myfile
+  volumes:
+  - name: mydir
+    hostPath:
+      path: /var/local/aaa        	# 文件1.txt的上层目录
+      type: DirectoryOrCreate    	# 确保该目录存在
+  - name: myfile
+    hostPath:
+      path: /var/local/aaa/1.txt
+      type: FileOrCreate           	# 确保文件存在
+
+
+
+# NFS
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-use-nfs
+spec:
+  containers:
+  - image: busybox
+    name: busybox
+    volumeMounts:
+    - mountPath: /data
+      name: nfs-volume
+  volumes:
+  - name: nfs-volume
+    nfs:
+      server: 10.1.1.1    # nfs服务器IP地址
+      path: /nfs_data     # nfs服务器目录
+      readOnly: true      # 是否只读

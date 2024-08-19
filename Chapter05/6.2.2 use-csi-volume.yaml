@@ -1,0 +1,46 @@
+# csi-storageclass.yaml
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: csi-hostpath-sc
+provisioner: hostpath.csi.k8s.io
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+
+
+# csi-pvc.yaml
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: csi-hostpath-sc
+
+
+# csi-app.yaml
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: my-csi-app
+spec:
+  containers:
+  - name: my-csi-app
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    command: [ "sleep", "1000000" ]
+    volumeMounts:
+    - mountPath: "/data"
+      name: my-csi-volume
+  volumes:
+  - name: my-csi-volume
+    persistentVolumeClaim:
+      claimName: csi-pvc

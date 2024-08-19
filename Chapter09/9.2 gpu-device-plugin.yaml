@@ -1,0 +1,84 @@
+# NVIDIA
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvidia-device-plugin-daemonset
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nvidia-device-plugin-ds
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        name: nvidia-device-plugin-ds
+    spec:
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      priorityClassName: "system-node-critical"
+      containers:
+      - image: nvcr.io/nvidia/k8s-device-plugin:v0.14.0
+        name: nvidia-device-plugin-ctr
+        env:
+          - name: FAIL_ON_INIT_ERROR
+            value: "false"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+        - name: device-plugin
+          mountPath: /var/lib/kubelet/device-plugins
+      volumes:
+      - name: device-plugin
+        hostPath:
+          path: /var/lib/kubelet/device-plugins
+
+
+
+
+# AMD
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: amdgpu-device-plugin-daemonset
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: amdgpu-dp-ds
+  template:
+    metadata:
+      labels:
+        name: amdgpu-dp-ds
+    spec:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+      priorityClassName: system-node-critical
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      containers:
+      - image: rocm/k8s-device-plugin
+        name: amdgpu-dp-cntr
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        volumeMounts:
+          - name: dp
+            mountPath: /var/lib/kubelet/device-plugins
+          - name: sys
+            mountPath: /sys
+      volumes:
+        - name: dp
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: sys
+          hostPath:
+            path: /sys

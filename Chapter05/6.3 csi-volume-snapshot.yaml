@@ -1,0 +1,112 @@
+# VolumeSnapshotClass
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: csi-hostpath-snapclass
+deletionPolicy: Delete
+driver: hostpath.csi.k8s.io
+parameters:
+
+
+# default VolumeSnapshotClass
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: csi-hostpath-snapclass
+  annotations:
+    snapshot.storage.kubernetes.io/is-default-class: "true"
+driver: hostpath.csi.k8s.io
+deletionPolicy: Delete
+parameters:
+
+
+# VolumeSnapshot
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: csi-hostpath-snapshot-1
+spec:
+  volumeSnapshotClassName: csi-hostpath-snapclass
+  source:
+    persistentVolumeClaimName: csi-pvc
+
+
+# VolumeSnapshotContent
+---
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotContent
+metadata:
+  name: snapshot-content-1
+spec:
+  deletionPolicy: Delete
+  driver: hostpath.csi.k8s.io
+  source:
+    snapshotHandle: 7bdd0de3-aaeb-11e8-9aae-0242ac110002
+  sourceVolumeMode: Filesystem
+  volumeSnapshotRef:
+    name: new-snapshot-test
+    namespace: default
+
+
+
+
+# pvc from Snapshot
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-from-snapshot
+spec:
+  storageClassName: csi-hostpath-sc
+  dataSource:
+    name: csi-hostpath-snapshot-1
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+
+
+
+# pvc clone
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: clone-of-pvc-1
+    namespace: default
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: csi-hostpath-sc
+  resources:
+    requests:
+      storage: 1Gi
+  dataSource:
+    kind: PersistentVolumeClaim
+    name: csi-pvc
+
+# pod use pvc clone
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: my-csi-app-2
+spec:
+  containers:
+  - name: my-csi-app-2
+    image: busybox
+    imagePullPolicy: IfNotPresent
+    command: [ "sleep", "1000000" ]
+    volumeMounts:
+    - mountPath: "/data"
+      name: my-csi-volume
+  volumes:
+  - name: my-csi-volume
+    persistentVolumeClaim:
+      claimName: clone-of-pvc-1

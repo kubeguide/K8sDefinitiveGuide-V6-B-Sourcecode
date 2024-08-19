@@ -1,0 +1,18 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: pod-csi-ephemeral
+spec:
+  containers:
+  - name: my-frontend
+    image: busybox
+    command: [ "sleep", "1000000" ]
+    volumeMounts:
+    - mountPath: "/data"
+      name: my-csi-inline-vol
+  volumes:
+  - name: my-csi-inline-vol
+    csi:
+      driver: inline.storage.kubernetes.io
+      volumeAttributes:
+        foo: bar
